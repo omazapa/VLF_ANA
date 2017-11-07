@@ -4,26 +4,32 @@
 static UInt_t counter=0;
 
 //______________________________________________________________________________
-Plotter::Plotter(TString treename,const std::vector<TString> branches, UInt_t bins,Double_t xmin, Double_t xmax):fBranches(branches),fNBins(bins),fXmin(xmin),fXmax(xmax),fOutput(nullptr)
+Plotter::Plotter(std::vector<TString> treenames,const std::vector<TString> branches, UInt_t bins,Double_t xmin, Double_t xmax):fBranches(branches),fNBins(bins),fXmin(xmin),fXmax(xmax),fOutput(nullptr)
 {
-    fChain  = new TChain(treename.Data());
-    fHStack = new THStack(Form("PlotterStack%d",counter),Form("Plotter %d Stacked Histograms",counter));
-    fCanvas = new TCanvas(Form("c%d",counter));
+    TString trees="(";
+    for(auto &treename:treenames)
+    {
+        auto chain = new TChain(treename.Data());
+        fChains.push_back(chain);
+        trees+=" "+treename;
+    }
+    trees+=" )";
+    
+    for(auto branch:fBranches)
+    {
+        auto hstack = new THStack(Form("PlotterStack%d",counter),Form("Plotter Stack Branch=%s Trees=%s",branch.Data(),trees.Data()));
+        fHStacks[branch.Data()]=hstack;
+    }
+    fCanvas = new TCanvas(Form("canvas%d",counter));
     counter++;
 }
 
-//______________________________________________________________________________
-Plotter::Plotter(TChain *chain,const std::vector<TString> branches, UInt_t bins,Double_t xmin, Double_t xmax):fChain(chain),fBranches(branches),fNBins(bins),fXmin(xmin),fXmax(xmax),fOutput(nullptr)
-{
-    fHStack = new THStack(Form("PlotterStack%d",counter),Form("Plotter %d Stacked Histograms",counter));    
-    counter++;
-}
 
 //______________________________________________________________________________
 Plotter::Plotter(const Plotter &p)
 {
-    fChain = p.fChain;
-    fHStack = p.fHStack;
+    fChains = p.fChains;
+    fHStacks = p.fHStacks;
     fBranches = p.fBranches; 
     fNBins = p.fNBins; 
     fXmin = p.fXmin; 
@@ -35,50 +41,67 @@ Plotter::Plotter(const Plotter &p)
 //______________________________________________________________________________
 Plotter::~Plotter()
 {
-    if(fHStack!=nullptr) delete fHStack;
+    //TODO: free vectors of pointers and map
     if(fCanvas!=nullptr) delete fCanvas;
 }
     
 //______________________________________________________________________________
-void Plotter::AddFile(const char *filename, Long64_t nentries, const char *treename)
+void Plotter::AddFile(const char *filename, const char *treename,Long64_t nentries)
 {
-    fChain->AddFile(filename,nentries,treename);
+    for(auto &chain:fChains)
+    {
+        chain->AddFile(filename,nentries,treename);
+    }
 }
     
 //______________________________________________________________________________
 void Plotter::AddFriend(TTree *chainOrTree,const char *alias)
 {
-    fChain->AddFriend(chainOrTree,alias);
+    for(auto &chain:fChains)
+    {
+        chain->AddFriend(chainOrTree,alias);
+    }
 }
     
 //______________________________________________________________________________
-THStack *Plotter::GetPlot()
+std::map<TString,THStack*>  &Plotter::GetPlots()
 {
     auto color=5;
     for(auto &branch:fBranches)
     {
         auto bname=branch.Data();
-        if(fChain->GetBranch(bname)==nullptr)
+        for(auto &chain:fChains)
         {
-            Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found omitting...",bname);
-            continue;//branch dont exists, omitting and continue to the next branch
+            auto cname=chain->GetName();
+            if(chain->GetBranch(bname)==nullptr)
+            {
+                Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found omitting...",bname);
+                continue;//branch dont exists, omitting and continue to the next branch
+            }
+            auto h=new TH1F(Form("%s%s",cname,bname),Form("%s%s",cname,bname),fNBins,fXmin,fXmax);
+            chain->Draw(Form("%s>>%s",bname,Form("%s%s",cname,bname)));
+            h->SetFillColor(color);
+            color++;
+            fHStacks[bname]->Add(h);
         }
-        
-        auto h=new TH1F(bname,bname,fNBins,fXmin,fXmax);
-        fChain->Draw(Form("%s>>%s",bname,bname));
-        h->SetFillColor(color);
-        color++;
-        fHStack->Add(h);
     }
-    fHStack->Draw();
-    return fHStack;
+    //fCanvas->Close();
+    return fHStacks;
 }
 
 //______________________________________________________________________________
 void Plotter::Print()
 {
-    fHStack->Print();
-    fChain->Print();
+    std::cout<<"---------------- Chains ----------------<<std::endl"<<std::endl;
+    for(auto &chain:fChains)
+    {
+        chain->Print();
+    }
+    std::cout<<"---------------- HStacks ----------------<<std::endl"<<std::endl;
+    for(auto &hstack:fHStacks)
+    {
+        hstack.second->Print();
+    }
 }
 
 

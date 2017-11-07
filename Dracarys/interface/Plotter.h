@@ -11,29 +11,30 @@
 #include<TString.h>
 #include<TFile.h>
 #include<THStack.h>
+#include<map>
+#include<iostream>
 
 class Plotter:public TObject
 {
 protected:
-    TChain *fChain;    //-> Global chain to handle files and trees
-    THStack *fHStack;  //-> stack to plot multiple histograms
-    std::vector<TString> fBranches; //branches to be plotted
-    UInt_t fNBins;                  //number of bins in histograms
-    Double_t fXmin;                 //low value for histograms
-    Double_t fXmax;                 //high value for histograms
-    TFile    *fOutput;              //!file to save the plots
-    TCanvas  *fCanvas;              //Global canvas to draw
+    std::vector<TChain*>  fChains;        //Global chain to handle files and trees
+    std::map<TString,THStack*> fHStacks;  //stack to plot multiple histograms
+    std::vector<TString>  fBranches;      //branches to be plotted
+    UInt_t fNBins;                        //number of bins in histograms
+    Double_t fXmin;                       //low value for histograms
+    Double_t fXmax;                       //high value for histograms
+    TFile    *fOutput;                    //!file to save the plots
+    TCanvas  *fCanvas;                    //Global canvas to draw
 public:
-    Plotter(TString treename,const std::vector<TString> branches, UInt_t bins=100, Double_t xmin=-10.0, Double_t xmax=10.0);
-    Plotter(TChain *chain,const std::vector<TString> branches,UInt_t bins=100,Double_t xmin=-10.0, Double_t xmax=10.0);
+    Plotter(std::vector<TString> treenames,const std::vector<TString> branches, UInt_t bins=100, Double_t xmin=-10.0, Double_t xmax=10.0);
     //copy constructor
     Plotter(const Plotter &p);
     ~Plotter();
 
-    void AddFile(const char *filename, Long64_t nentries=TTree::kMaxEntries, const char *treename="");
+    void AddFile(const char *filename, const char *treename="",Long64_t nentries=TTree::kMaxEntries);
     void AddFriend(TTree *chainOrTree,const char *alias = "");
     
-    THStack *GetPlot();
+    std::map<TString,THStack*> &GetPlots();
     
     void Print();
     ClassDef(Plotter,0);
