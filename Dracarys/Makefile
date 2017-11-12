@@ -1,5 +1,5 @@
 CXXFLAGS=-Iinterface/ `root-config --cflags`
-SO_FLAGS=-shared -fPIC
+SO_FLAGS=-shared -fPIC -g
 LD_FLAGS=`root-config --ldflags`
 ROOT_LIBS=`root-config --glibs`
 
