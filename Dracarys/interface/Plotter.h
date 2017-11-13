@@ -21,7 +21,7 @@
 
 class Plotter:public TObject
 {
-public:
+protected:
     std::map<std::string,TChain*>  fChains;   //Global chain to handle files and trees
     std::map<std::string,std::pair<THStack*,TLegend*> > fHStacks;  //stack to plot multiple histograms
     std::vector<std::string>  fBranches;      //branches to be plotted
@@ -29,11 +29,12 @@ public:
     Double_t fXmin;                       //low value for histograms
     Double_t fXmax;                       //high value for histograms
     TFile    *fOutput;                    //!file to save the plots
-    TCanvas  *fCanvas;                    //Global canvas to draw
+    TCanvas  *fCanvas;                    //!Global canvas to draw
     std::string  fTreeName;               //Global Tree name
-    std::map<std::string,TCut>  fCuts;     //Cuts to apply  
+    std::map<std::string,TCut>  fCuts;    //Cuts to apply
+    std::map<std::string,std::pair<std::vector<TH1F*>,TLegend*> >   fHists;    //map of histograms for the stacks
 public:
-    Plotter(std::string treename,const std::vector<std::string> branches, UInt_t bins=100, Double_t xmin=-10.0, Double_t xmax=10.0);
+    Plotter(std::string treename,std::vector<std::string> branches, UInt_t bins=100, Double_t xmin=-10.0, Double_t xmax=10.0);
     //copy constructor
     Plotter(const Plotter &p);
     ~Plotter();
@@ -61,12 +62,20 @@ public:
      */
     void SetCut(const Char_t *alias, TCut cut);
     
-    std::map<std::string,std::pair<THStack*,TLegend*> > &GetPlots();
+    void SavePdf(const Char_t *filename,const Char_t *branch);
+    
+    void SaveFile(const Char_t *rootfile,const Char_t *mode="RECREATE");
 
+    std::map<std::string,std::pair<THStack*,TLegend*> > &GetPlots();
+    
     void Print();
     
-public:
-    std::pair<THStack*,TLegend*> &GetPlot(const Char_t *branch);
+protected:
+    std::pair<std::vector<TH1F*>,TLegend*>  &GetHists(const Char_t *branch);
+    std::pair<THStack*,TLegend*>  &GetHStack(const Char_t *branch);
+    
+    
+    
     std::vector<std::string> Find(std::string path, std::string pattern="*.root");
     ClassDef(Plotter,0);
 };
