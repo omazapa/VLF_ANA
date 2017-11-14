@@ -13,8 +13,8 @@ from ROOT.std import vector as _vector
 from ROOT.std import string as _string
 
 
-_gSystem.Load("libPlotter.so")
-from ROOT import Plotter as _Plotter
+_gSystem.Load("libHarryPlotter.so")
+from ROOT.Harry  import Plotter as _Plotter
 
 class Plotter(object):
     def __init__(self,treename,branches,bins=100,xmin=-10.0, xmax=10.0):
@@ -31,12 +31,21 @@ class Plotter(object):
     
     def SetCut(self,alias,cut):
         cuts=_TCut(cut)
-        self.plotter.SetCut(alias,cuts) 
+        self.plotter.SetCut(alias,cuts)
+        
+    def SetCut(self,cut):
+        cuts=_TCut(cut)
+        self.plotter.SetCut(cuts) 
+        
     def GetPlots(self):
         plotmap = self.plotter.GetPlots()
         plots = {}
         for key,value in plotmap:
             plots[key] = (value.first,value.second)
         return plots
+    
     def SavePdf(self,filename,branch):
         self.plotter.SavePdf(filename,branch)
+        
+    def SaveFile(self,filename):
+        self.plotter.SaveFile(filename)

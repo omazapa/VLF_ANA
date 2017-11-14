@@ -1,6 +1,9 @@
 #include<Plotter.h>
 #include<TROOT.h>
 #include<TSystem.h>
+
+using namespace Harry;
+
 static UInt_t counter=0;
 
 //______________________________________________________________________________
@@ -66,11 +69,18 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
     for(auto &chain:fChains)
     {
             auto cname=chain.first.c_str();
-            if(chain.second->GetBranch(branch)==nullptr)
-            {
-                Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found omitting...",branch);
-                continue;//branch dont exists, omitting and continue to the next branch
-            }
+//TODO: check if branch or lead exists            
+//             if(chain.second->GetBranch(branch)==nullptr)
+//             {
+//                 Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found omitting...",branch);
+//                 continue;//branch dont exists, omitting and continue to the next branch
+//             }
+//             if(chain.second->GetLeaf(branch)==nullptr)
+//             {
+//                 Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Leaf %s not found omitting...",branch);
+//                 continue;//branch dont exists, omitting and continue to the next branch
+//             }
+
             if(!fHists.count(branch))//if histograms are not created
             {
                 if(!leg) leg = new TLegend(0.68,0.72,0.98,0.92);
@@ -84,7 +94,7 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
             }
             TCut cuts="";
             if(fCuts.count(cname)) cuts=fCuts[cname];
-            chain.second->Draw(Form("%s>>%s",branch,Form("%s%s",cname,branch)),cuts,"goff");
+            chain.second->Draw(Form("%s>>%s",branch,Form("%s%s",cname,branch)),cuts && fCut,"goff");
             color++;
     }
     fHists[branch]=std::pair<std::vector<TH1F*>,TLegend*>(hists,leg);
@@ -139,6 +149,12 @@ std::map<std::string,std::pair<THStack*,TLegend*> > &Plotter::GetPlots()
 void Plotter::SetCut(const Char_t *alias, TCut cut)
 {
         fCuts[alias]=cut;
+}
+
+//______________________________________________________________________________
+void Plotter::SetCut(TCut cut)
+{
+    fCut=cut;
 }
 
 //______________________________________________________________________________

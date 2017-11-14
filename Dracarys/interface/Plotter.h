@@ -19,65 +19,68 @@
 #include<map>
 #include<iostream>
 
-class Plotter:public TObject
-{
-protected:
-    std::map<std::string,TChain*>  fChains;   //Global chain to handle files and trees
-    std::map<std::string,std::pair<THStack*,TLegend*> > fHStacks;  //stack to plot multiple histograms
-    std::vector<std::string>  fBranches;      //branches to be plotted
-    UInt_t fNBins;                        //number of bins in histograms
-    Double_t fXmin;                       //low value for histograms
-    Double_t fXmax;                       //high value for histograms
-    TFile    *fOutput;                    //!file to save the plots
-    TCanvas  *fCanvas;                    //!Global canvas to draw
-    std::string  fTreeName;               //Global Tree name
-    std::map<std::string,TCut>  fCuts;    //Cuts to apply
-    std::map<std::string,std::pair<std::vector<TH1F*>,TLegend*> >   fHists;    //map of histograms for the stacks
-public:
-    Plotter(std::string treename,std::vector<std::string> branches, UInt_t bins=100, Double_t xmin=-10.0, Double_t xmax=10.0);
-    //copy constructor
-    Plotter(const Plotter &p);
-    ~Plotter();
+namespace Harry {
+   class Plotter: public TObject {
+   protected:
+      std::map<std::string, TChain *>  fChains; //Global chain to handle files and trees
+      std::map<std::string, std::pair<THStack *, TLegend *> > fHStacks; //stack to plot multiple histograms
+      std::vector<std::string>  fBranches;      //branches to be plotted
+      UInt_t fNBins;                        //number of bins in histograms
+      Double_t fXmin;                       //low value for histograms
+      Double_t fXmax;                       //high value for histograms
+      TFile    *fOutput;                    //!file to save the plots
+      TCanvas  *fCanvas;                    //!Global canvas to draw
+      std::string  fTreeName;               //Global Tree name
+      std::map<std::string, TCut>  fCuts;   //Cuts to apply
+      std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *> >   fHists; //map of histograms for the stacks
+      TCut fCut;                            //Global Cut
+   public:
+      Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins = 100, Double_t xmin = -10.0, Double_t xmax = 10.0);
+      //copy constructor
+      Plotter(const Plotter &p);
+      ~Plotter();
 
-    /**
-     * Method to add root files to a TChain given a path.
-     * \param path directory to search root files
-     * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...)
-     * \param weight weight to apply to all trees in the chain.
-     */
-    void AddDirectory(const Char_t *path,const Char_t *alias,Double_t weight=1);
-    
-    /**
-     * Method to add a single root file to a TChain given a path and alias.
-     * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...)
-     * \param filename directory to root file
-     * \param weight weight to apply to all trees in the chain.
-     */
-    void AddFile(const Char_t *alias,const Char_t *filename, Double_t weight,Long64_t nentries=TTree::kMaxEntries);
-    
-    /**
-     * Method to apply a Cuts to TChain while the histograms are created.
-     * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...) (TChain)
-     * \param TCut object with the cuts https://root.cern.ch/doc/master/classTCut.html NOTE: mutiples cuts can be addressed in TCut object
-     */
-    void SetCut(const Char_t *alias, TCut cut);
-    
-    void SavePdf(const Char_t *filename,const Char_t *branch);
-    
-    void SaveFile(const Char_t *rootfile,const Char_t *mode="RECREATE");
+      /**
+       * Method to add root files to a TChain given a path.
+       * \param path directory to search root files
+       * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...)
+       * \param weight weight to apply to all trees in the chain.
+       */
+      void AddDirectory(const Char_t *path, const Char_t *alias, Double_t weight = 1);
 
-    std::map<std::string,std::pair<THStack*,TLegend*> > &GetPlots();
-    
-    void Print();
-    
-protected:
-    std::pair<std::vector<TH1F*>,TLegend*>  &GetHists(const Char_t *branch);
-    std::pair<THStack*,TLegend*>  &GetHStack(const Char_t *branch);
-    
-    
-    
-    std::vector<std::string> Find(std::string path, std::string pattern="*.root");
-    ClassDef(Plotter,0);
-};
+      /**
+       * Method to add a single root file to a TChain given a path and alias.
+       * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...)
+       * \param filename directory to root file
+       * \param weight weight to apply to all trees in the chain.
+       */
+      void AddFile(const Char_t *alias, const Char_t *filename, Double_t weight, Long64_t nentries = TTree::kMaxEntries);
 
+      /**
+       * Method to apply a Cuts to TChain while the histograms are created.
+       * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...) (TChain)
+       * \param TCut object with the cuts https://root.cern.ch/doc/master/classTCut.html NOTE: mutiples cuts can be addressed in TCut object
+       */
+      void SetCut(const Char_t *alias, TCut cut);
+
+      void SetCut(TCut cut);
+
+      void SavePdf(const Char_t *filename, const Char_t *branch);
+      //TODO: Save pdf for all branches
+      void SaveFile(const Char_t *rootfile, const Char_t *mode = "RECREATE");
+
+      std::map<std::string, std::pair<THStack *, TLegend *> > &GetPlots();
+
+      void Print();
+
+   protected:
+      std::pair<std::vector<TH1F *>, TLegend *>  &GetHists(const Char_t *branch);
+      std::pair<THStack *, TLegend *>  &GetHStack(const Char_t *branch);
+
+
+
+      std::vector<std::string> Find(std::string path, std::string pattern = "*.root");
+      ClassDef(Plotter, 0);
+   };
+}
 #endif
