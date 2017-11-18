@@ -34,6 +34,7 @@ namespace Harry {
       std::map<std::string, TCut>  fCuts;   //Cuts to apply
       std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *> >   fHists; //map of histograms for the stacks
       TCut fCut;                            //Global Cut
+      Bool_t fSumw2;
    public:
       Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins = 100, Double_t xmin = -10.0, Double_t xmax = 10.0);
       //copy constructor
@@ -63,19 +64,33 @@ namespace Harry {
        */
       void SetCut(const Char_t *alias, TCut cut);
 
+      /**
+       * Method to apply a Cuts to TChain while the histograms are created.
+       * \param TCut object with the cuts https://root.cern.ch/doc/master/classTCut.html NOTE: mutiples cuts can be addressed in TCut object
+       */
       void SetCut(TCut cut);
 
-      void SavePdf(const Char_t *filename, const Char_t *branch);
+      /**
+       * Method to enable error as sqrt(sum of weights) while the histograms are created.
+       * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...) (TChain)
+       * \param TCut object with the cuts https://root.cern.ch/doc/master/classTCut.html NOTE: mutiples cuts can be addressed in TCut object
+       */
+      void SetSumw2(){fSumw2=kTRUE;}
+
+      void SavePdfs(const Char_t *dir="plots");
+      
       //TODO: Save pdf for all branches
       void SaveFile(const Char_t *rootfile, const Char_t *mode = "RECREATE");
 
       std::map<std::string, std::pair<THStack *, TLegend *> > &GetPlots();
 
+      std::pair<std::vector<TH1F *>, TLegend *>  &GetHists(const Char_t *branch);
+      
       void Print();
 
    protected:
-      std::pair<std::vector<TH1F *>, TLegend *>  &GetHists(const Char_t *branch);
       std::pair<THStack *, TLegend *>  &GetHStack(const Char_t *branch);
+      void SavePdf(const Char_t *filename, const Char_t *branch);
 
 
 

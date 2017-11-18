@@ -7,7 +7,7 @@ using namespace Harry;
 static UInt_t counter=0;
 
 //______________________________________________________________________________
-Plotter::Plotter(std::string treename,std::vector<std::string> branches, UInt_t bins,Double_t xmin, Double_t xmax):fBranches(branches),fNBins(bins),fXmin(xmin),fXmax(xmax),fOutput(nullptr),fTreeName(treename)
+Plotter::Plotter(std::string treename,std::vector<std::string> branches, UInt_t bins,Double_t xmin, Double_t xmax):fBranches(branches),fNBins(bins),fXmin(xmin),fXmax(xmax),fOutput(nullptr),fTreeName(treename),fSumw2(kFALSE)
 {    
 }
 
@@ -47,6 +47,7 @@ void Plotter::AddDirectory(const char *path,const char *alias,Double_t weight)
     //NOTE: if you call two times this function changing the weight
     //all the previous weights will be change for the last one.
     fChains[alias]->SetWeight(weight);//setting weight 
+    fChains[alias]->SetBranchStatus("*",1);//enabling all branches
 }
 
 //______________________________________________________________________________
@@ -69,7 +70,7 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
     for(auto &chain:fChains)
     {
             auto cname=chain.first.c_str();
-//TODO: check if branch or lead exists            
+//TODO: check if branch or leaf exists            
 //             if(chain.second->GetBranch(branch)==nullptr)
 //             {
 //                 Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found omitting...",branch);
@@ -81,20 +82,27 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
 //                 continue;//branch dont exists, omitting and continue to the next branch
 //             }
 
+            TCut cuts="";
+            if(fCuts.count(cname)) cuts=fCuts[cname];
+            TString lbranch=branch;
+            lbranch=lbranch.ReplaceAll(")","").ReplaceAll("(","");
+            chain.second->Draw(Form("%s>>%s(%d,%f,%f)",branch,Form("%s%s",cname,lbranch.Data()),fNBins,fXmin,fXmax),cuts && fCut,"goff");
             if(!fHists.count(branch))//if histograms are not created
             {
                 if(!leg) leg = new TLegend(0.68,0.72,0.98,0.92);
-                auto h = new TH1F(Form("%s%s",cname,branch),Form("%s%s",cname,branch),fNBins,fXmin,fXmax);
+                auto h=(TH1F*)gROOT->FindObject(Form("%s%s",cname,lbranch.Data()));
+                h->SetName(Form("%s%s",cname,lbranch.Data()));
+                h->SetTitle(Form("%s%s",cname,branch));
                 h->SetFillColor(color);
                 h->SetLineColor(color);
+                // error as sqrt(sum of weights)
+                if(fSumw2) h->Sumw2();//to compute the error on the weights
                 hists.push_back(h);
                 leg->AddEntry(h,cname,"l");
             }else{
                 leg=fHists[branch].second;
             }
-            TCut cuts="";
-            if(fCuts.count(cname)) cuts=fCuts[cname];
-            chain.second->Draw(Form("%s>>%s",branch,Form("%s%s",cname,branch)),cuts && fCut,"goff");
+            
             color++;
     }
     fHists[branch]=std::pair<std::vector<TH1F*>,TLegend*>(hists,leg);
@@ -158,6 +166,25 @@ void Plotter::SetCut(TCut cut)
 }
 
 //______________________________________________________________________________
+void Plotter::SavePdfs(const Char_t *dir)
+{
+    if(gSystem->AccessPathName(dir)) gSystem->mkdir(dir);
+    
+    for(auto &branch:fBranches){
+        fCanvas = new TCanvas(Form("c%d",counter));
+        counter++;
+        auto hstack = GetHStack(branch.c_str());
+        hstack.first->Draw();
+        hstack.second->Draw();
+        fCanvas->Draw();
+        auto filename=Form("%s/%s.pdf",dir,TString(branch.c_str()).ReplaceAll("(","").ReplaceAll(")","").Data());
+        fCanvas->SaveAs(filename);
+        delete fCanvas;
+    }
+}
+
+
+//______________________________________________________________________________
 void Plotter::SavePdf(const Char_t *filename,const Char_t *branch)
 {
     fCanvas = new TCanvas(Form("c%d",counter));
@@ -167,6 +194,7 @@ void Plotter::SavePdf(const Char_t *filename,const Char_t *branch)
     hstack.second->Draw();
     fCanvas->Draw();
     fCanvas->SaveAs(filename);
+    delete fCanvas;
 }
 
 //______________________________________________________________________________

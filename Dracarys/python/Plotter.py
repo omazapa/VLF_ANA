@@ -49,3 +49,9 @@ class Plotter(object):
         
     def SaveFile(self,filename):
         self.plotter.SaveFile(filename)
+        
+    def SetSumw2(self):
+        self.plotter.SetSumw2()
+        
+    def SavePdfs(self,dir="plots"):
+        self.plotter.SavePdfs(dir)
