@@ -181,6 +181,7 @@ void Plotter::SavePdfs(const Char_t *dir)
         fCanvas->SaveAs(filename);
         delete fCanvas;
     }
+    fCanvas=nullptr;
 }
 
 
@@ -213,6 +214,7 @@ void Plotter::SaveFile(const Char_t *rootfile,const Char_t *mode)
          plot.second.first->Write();//histograms
          plot.second.second->Write();//Legend
     }
+    fCut.Write("cuts");
     fOutput->Close();
 }
 
