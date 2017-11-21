@@ -62,6 +62,15 @@ void Plotter::AddFile(const char *alias,const char *filename, Double_t weight,Lo
 }
 
 //______________________________________________________________________________
+std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *> > &Plotter::GetHists()
+{
+    for(auto &branch:fBranches){
+            GetHists(branch.c_str());
+    }
+    return fHists;
+}
+
+//______________________________________________________________________________
 std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch)
 {
     auto color=2;
@@ -87,8 +96,8 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
             TString lbranch=branch;
             lbranch=lbranch.ReplaceAll(")","").ReplaceAll("(","");
             chain.second->Draw(Form("%s>>%s(%d,%f,%f)",branch,Form("%s%s",cname,lbranch.Data()),fNBins,fXmin,fXmax),cuts && fCut,"goff");
-            if(!fHists.count(branch))//if histograms are not created
-            {
+//             if(!fHists.count(branch))//if histograms are not created
+//             {
                 if(!leg) leg = new TLegend(0.68,0.72,0.98,0.92);
                 auto h=(TH1F*)gROOT->FindObject(Form("%s%s",cname,lbranch.Data()));
                 h->SetName(Form("%s%s",cname,lbranch.Data()));
@@ -99,9 +108,9 @@ std::pair<std::vector<TH1F*>,TLegend*>   &Plotter::GetHists(const Char_t *branch
                 if(fSumw2) h->Sumw2();//to compute the error on the weights
                 hists.push_back(h);
                 leg->AddEntry(h,cname,"l");
-            }else{
-                leg=fHists[branch].second;
-            }
+//             }else{
+//                 leg=fHists[branch].second;
+//             }
             
             color++;
     }
@@ -141,6 +150,7 @@ std::pair<THStack*,TLegend*>  &Plotter::GetHStack(const Char_t *branch)
     {
         fHStacks[branch].first->Add(hist);
     }
+//     fHStacks[branch].second=fHists[branch].second;
     return fHStacks[branch];
 }
 
@@ -174,8 +184,10 @@ void Plotter::SavePdfs(const Char_t *dir)
         fCanvas = new TCanvas(Form("c%d",counter));
         counter++;
         auto hstack = GetHStack(branch.c_str());
-        hstack.first->Draw();
-        hstack.second->Draw();
+        auto hs=(THStack*)hstack.first->Clone();
+        auto legen=(TLegend*)hstack.second->Clone();
+        hs->Draw();
+        legen->Draw();
         fCanvas->Draw();
         auto filename=Form("%s/%s.pdf",dir,TString(branch.c_str()).ReplaceAll("(","").ReplaceAll(")","").Data());
         fCanvas->SaveAs(filename);
@@ -207,14 +219,18 @@ void Plotter::SaveFile(const Char_t *rootfile,const Char_t *mode)
     {
          TDirectory *branch = fOutput->mkdir(plot.first.c_str());
          branch->cd();
+         auto hs=new THStack(plot.second.first->GetName(),plot.second.first->GetTitle());
          for(auto &hist:fHists[plot.first.c_str()].first)
          {
-             hist->Write();
+             auto h=(TH1F*)hist->Clone();
+             h->Write();
+             hs->Add(h);
          }
-         plot.second.first->Write();//histograms
-         plot.second.second->Write();//Legend
+         hs->Write();//hstack
+         fHists[plot.first.c_str()].second->Write();
+         //plot.second.second->Write();//Legend
     }
-    fCut.Write("cuts");
+//    fCut.Write("cuts");
     fOutput->Close();
 }
 

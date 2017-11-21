@@ -93,11 +93,8 @@ namespace Harry {
        */
       std::map<std::string, std::pair<THStack *, TLegend *> > &GetPlots();
 
-      /**
-       * Method to get a pair of histograms in a vector and the second element of the pair is the legend.
-       */
-      std::pair<std::vector<TH1F *>, TLegend *>  &GetHists(const Char_t *branch);
-
+      std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *> > &GetHists();
+      
       /**
        * Method to get a pair of hstack and legend
        * \param branch branch name
@@ -107,7 +104,11 @@ namespace Harry {
       void Print();
 
    protected:
-      void SavePdf(const Char_t *filename, const Char_t *branch);
+      /**
+       * Method to get a pair of histograms in a vector and the second element of the pair is the legend.
+       */
+      std::pair<std::vector<TH1F *>, TLegend *>  &GetHists(const Char_t *branch);
+     void SavePdf(const Char_t *filename, const Char_t *branch);
       std::vector<std::string> Find(std::string path, std::string pattern = "*.root");
       ClassDef(Plotter, 0);
    };
